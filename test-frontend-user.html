@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend User ID Test</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <h1>🔍 Frontend User ID Debug Test</h1>
+    <div id="results"></div>
+    
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+        import { getFirestore, collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+        // Your Firebase config (same as in your app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOFpgaD2Pp-zzBKhqy6pNDPNJGt5qfFUQ",
+            authDomain: "school-saas-b4bc6.firebaseapp.com",
+            projectId: "school-saas-b4bc6",
+            storageBucket: "school-saas-b4bc6.firebasestorage.app",
+            messagingSenderId: "905611336609",
+            appId: "1:905611336609:web:43e0a4a0ebb8ad6ab9b244"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        function updateResults(html) {
+            document.getElementById('results').innerHTML += html + '<br>';
+        }
+
+        updateResults('🔄 Checking authentication state...');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                updateResults('✅ User is authenticated!');
+                updateResults('🆔 Frontend User ID: <strong>' + user.uid + '</strong>');
+                updateResults('📧 Email: ' + user.email);
+                updateResults('📱 Display Name: ' + (user.displayName || 'Not set'));
+                
+                // Check if this matches the expected user ID
+                const expectedUserId = 'E6RrBLxUS6N9gsRax01fcTVfGYt2';
+                if (user.uid === expectedUserId) {
+                    updateResults('✅ <span style="color: green;">User ID MATCHES expected ID!</span>');
+                } else {
+                    updateResults('❌ <span style="color: red;">User ID MISMATCH!</span>');
+                    updateResults('   Expected: ' + expectedUserId);
+                    updateResults('   Actual:   ' + user.uid);
+                }
+                
+                // Try to load practiced notes
+                updateResults('<br>🔍 Checking practiced notes...');
+                try {
+                    const notesRef = collection(db, 'smartNotebook', user.uid, 'practicedNotes');
+                    const notesQuery = query(notesRef, orderBy('timestamp', 'desc'));
+                    const notesSnapshot = await getDocs(notesQuery);
+                    
+                    updateResults('📊 Found ' + notesSnapshot.docs.length + ' practiced notes');
+                    
+                    if (notesSnapshot.docs.length > 0) {
+                        updateResults('<br>📝 Recent notes:');
+                        notesSnapshot.docs.slice(0, 3).forEach((doc, index) => {
+                            const data = doc.data();
+                            updateResults(`${index + 1}. ${data.question} (${doc.id})`);
+                        });
+                    } else {
+                        updateResults('⚠️ No practiced notes found for this user ID');
+                    }
+                } catch (error) {
+                    updateResults('❌ Error loading practiced notes: ' + error.message);
+                }
+                
+            } else {
+                updateResults('❌ User is not authenticated');
+                updateResults('🔗 Please sign in to your app first, then refresh this page');
+            }
+        });
+    </script>
+</body>
+</html> 

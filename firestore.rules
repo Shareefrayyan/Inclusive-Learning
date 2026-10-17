@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ✅ Students can read their own user document
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ✅ Email-based invites during signup
+    match /pendinginvites/{inviteId} {
+      allow read: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // ✅ Allow reading and writing Let's Study (Questionaire) data
+    match /questionaire/{subject} {
+      allow read, write: if request.auth != null;
+
+      match /chapters/{chapter} {
+        allow read, write: if request.auth != null;
+
+        match /topics/{topic} {
+          allow read, write: if request.auth != null;
+
+          match /questions/{questionId} {
+            allow read, write: if request.auth != null;
+          }
+        }
+      }
+    }
+
+    // ✅ ✅ Allow each student to write their own answers securely
+    match /studentAnswers/{userId}/topics/{topicId}/answers/{answerId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ✅ Smart Notebook - Allow students to access their own notebook data
+    match /smartNotebook/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+} 
